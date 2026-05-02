@@ -7,15 +7,24 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\DiscountCodeController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Admin\BrandController;
+use App\Http\Controllers\Admin\CategoryController;
 
 // ==================== PUBLIC ROUTES ====================
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/product/{id}', [ProductController::class, 'detail'])->name('product.detail');
 Route::get('/product/{product}/reviews', [ReviewController::class, 'showByProduct'])->name('review.show');
+Route::get('/brands/{brand:slug}', [ProductController::class, 'showByBrand'])->name('products.by_brand');
+
+// Route cho chức năng tìm kiếm sản phẩm
+Route::get('/search', [ProductController::class, 'search'])->name('products.search');
 
 // Chatbot API
 Route::middleware(['auth'])->group(function () {
@@ -46,20 +55,43 @@ Route::middleware(['auth'])->group(function () {
     // Reviews
     Route::get('/order/{order}/review', [ReviewController::class, 'create'])->name('review.create');
     Route::post('/order/{order}/review', [ReviewController::class, 'store'])->name('review.store');
+
+    // Account Management
+    Route::get('/account', [AccountController::class, 'edit'])->name('account.edit');
+    Route::post('/account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
+    Route::post('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
 });
 
 // ==================== ADMIN ROUTES ====================
-Route::middleware(['admin'])->prefix('admin')->group(function () {
-    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+Route::middleware(['admin'])->prefix('admin')->group(function () { // Giữ nguyên middleware và prefix
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     
     // Products
-    Route::get('/products', [AdminController::class, 'products'])->name('admin.products');
-    Route::get('/products/create', [AdminController::class, 'createProduct'])->name('admin.products.create');
-    Route::post('/products', [AdminController::class, 'storeProduct'])->name('admin.products.store');
-    Route::get('/products/{product}/edit', [AdminController::class, 'editProduct'])->name('admin.products.edit');
-    Route::put('/products/{product}', [AdminController::class, 'updateProduct'])->name('admin.products.update');
-    Route::delete('/products/{product}', [AdminController::class, 'deleteProduct'])->name('admin.products.delete');
+    Route::get('/products', [AdminProductController::class, 'index'])->name('admin.products.index');
+    Route::get('/products/create', [AdminProductController::class, 'create'])->name('admin.products.create');
+    Route::post('/products', [AdminProductController::class, 'store'])->name('admin.products.store');
+    Route::get('/products/{product}/edit', [AdminProductController::class, 'edit'])->name('admin.products.edit');
+    Route::put('/products/{product}', [AdminProductController::class, 'update'])->name('admin.products.update');
+    Route::delete('/products/{product}', [AdminProductController::class, 'destroy'])->name('admin.products.destroy');
+
+    // Brands Management
+    Route::get('/brands', [BrandController::class, 'index'])->name('admin.brands.index');
+    Route::get('/brands/create', [BrandController::class, 'create'])->name('admin.brands.create');
+    Route::post('/brands', [BrandController::class, 'store'])->name('admin.brands.store');
+    Route::post('/brands/store-ajax', [BrandController::class, 'storeAjax'])->name('admin.brands.store.ajax');
+    Route::get('/brands/{brand}/edit', [BrandController::class, 'edit'])->name('admin.brands.edit');
+    Route::put('/brands/{brand}', [BrandController::class, 'update'])->name('admin.brands.update');
+    Route::delete('/brands/{brand}', [BrandController::class, 'destroy'])->name('admin.brands.destroy');
     
+    // Categories Management
+    Route::get('/categories', [CategoryController::class, 'index'])->name('admin.categories.index');
+    Route::get('/categories/create', [CategoryController::class, 'create'])->name('admin.categories.create');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('admin.categories.store');
+    Route::post('/categories/store-ajax', [CategoryController::class, 'storeAjax'])->name('admin.categories.store.ajax');
+    Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('admin.categories.edit');
+    Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('admin.categories.update');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('admin.categories.destroy');
+
     // Orders
     Route::get('/orders', [AdminController::class, 'orders'])->name('admin.orders');
     Route::get('/orders/{order}', [AdminController::class, 'orderDetail'])->name('admin.orders.detail');

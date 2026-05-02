@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\DiscountCode;
 use Illuminate\Http\Request;
@@ -14,25 +15,33 @@ class OrderController extends Controller
     // Xử lý checkout
     public function checkout(Request $request)
     {
-        $cart = session()->get('cart', []);
+        $validatedData = $request->validate([
+            'shipping_address' => 'required|string|max:500',
+            'phone' => 'required|string|max:20',
+            'note' => 'nullable|string|max:1000',
+            'discount_code' => 'nullable|string|exists:discount_codes,code'
+        ]);
 
-        if (empty($cart)) {
+        $user = Auth::user();
+        $cartItems = CartItem::where('user_id', $user->id)->with('product')->get();
+
+        if ($cartItems->isEmpty()) {
             return redirect('/cart')->with('error', 'Giỏ hàng trống!');
         }
 
         // Tính tổng tiền
         $total = 0;
-        foreach ($cart as $item) {
-            $total += $item['price'] * $item['quantity'];
+        foreach ($cartItems as $item) {
+            $total += $item->product->price * $item->quantity;
         }
 
         // Kiểm tra số lượng kho trước khi tạo đơn hàng
-        foreach ($cart as $item) {
-            $product = Product::find($item['id']);
-            if (!$product || $product->quantity < $item['quantity']) {
-                $available = $product ? $product->quantity : 0;
+        foreach ($cartItems as $item) {
+            // Đảm bảo product tồn tại trong cart item
+            if (!$item->product || $item->product->quantity < $item->quantity) {
+                $available = $item->product ? $item->product->quantity : 0;
                 return redirect('/cart')->with('error', 
-                    "❌ Sản phẩm '{$item['name']}' không đủ số lượng! Chỉ còn {$available} chiếc trong kho.");
+                    "❌ Sản phẩm '{$item->product->name}' không đủ số lượng! Chỉ còn {$available} chiếc trong kho.");
             }
         }
 
@@ -69,23 +78,20 @@ class OrderController extends Controller
         ]);
 
         // Lưu chi tiết đơn hàng
-        foreach ($cart as $item) {
+        foreach ($cartItems as $item) {
             OrderItem::create([
                 'order_id' => $order->id,
-                'product_id' => $item['id'],
+                'product_id' => $item->product_id,
                 'quantity' => $item['quantity'],
-                'price' => $item['price']
+                'price' => $item->product->price
             ]);
 
             // Giảm số lượng sản phẩm trong kho
-            $product = Product::find($item['id']);
-            $product->quantity -= $item['quantity'];
-            $product->save();
+            $item->product->decrement('quantity', $item->quantity);
         }
 
-        // Xóa giỏ hàng
-        session()->forget('cart');
-        session()->forget('discount_code');
+        // Xóa giỏ hàng trong database của người dùng
+        CartItem::where('user_id', $user->id)->delete();
 
         return redirect()->route('order.success', ['order' => $order->id]);
     }

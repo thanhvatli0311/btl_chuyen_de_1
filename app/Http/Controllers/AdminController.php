@@ -46,79 +46,6 @@ class AdminController extends Controller
         ]);
     }
 
-    // ========== PRODUCTS ==========
-    public function products()
-    {
-        $products = Product::with('category')->paginate(15);
-        return view('admin.products.index', compact('products'));
-    }
-
-    public function createProduct()
-    {
-        $categories = Category::all();
-        return view('admin.products.create', compact('categories'));
-    }
-
-    public function storeProduct(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
-            'quantity' => 'required|integer|min:0',
-            'description' => 'required|string',
-            'category_id' => 'required|exists:categories,id',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
-        ]);
-
-        $imageName = time() . '.' . $request->image->extension();
-        $request->image->move(public_path('images'), $imageName);
-
-        Product::create([
-            'name' => $validated['name'],
-            'price' => $validated['price'],
-            'quantity' => $validated['quantity'],
-            'description' => $validated['description'],
-            'category_id' => $validated['category_id'],
-            'image' => $imageName
-        ]);
-
-        return redirect()->route('admin.products')->with('success', 'Sản phẩm được thêm thành công!');
-    }
-
-    public function editProduct(Product $product)
-    {
-        $categories = Category::all();
-        return view('admin.products.edit', compact('product', 'categories'));
-    }
-
-    public function updateProduct(Request $request, Product $product)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
-            'quantity' => 'required|integer|min:0',
-            'description' => 'required|string',
-            'category_id' => 'required|exists:categories,id',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
-        ]);
-
-        if ($request->hasFile('image')) {
-            $imageName = time() . '.' . $request->image->extension();
-            $request->image->move(public_path('images'), $imageName);
-            $validated['image'] = $imageName;
-        }
-
-        $product->update($validated);
-
-        return redirect()->route('admin.products')->with('success', 'Sản phẩm cập nhật thành công!');
-    }
-
-    public function deleteProduct(Product $product)
-    {
-        $product->delete();
-        return redirect()->route('admin.products')->with('success', 'Sản phẩm xóa thành công!');
-    }
-
     // ========== ORDERS ==========
     public function orders()
     {
@@ -324,16 +251,5 @@ class AdminController extends Controller
     {
         $message->delete();
         return redirect()->route('admin.messages')->with('success', 'Tin nhắn đã được xóa!');
-    }
-
-    // Legacy method - for backward compatibility
-    public function addForm()
-    {
-        return $this->createProduct();
-    }
-
-    public function store(Request $request)
-    {
-        return $this->storeProduct($request);
     }
 }

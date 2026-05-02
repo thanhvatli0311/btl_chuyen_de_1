@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Review;
+use App\Http\Requests\StoreReviewRequest;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,16 +16,9 @@ class ReviewController extends Controller
      */
     public function create(Order $order)
     {
-        // Kiểm tra xem đơn hàng có thuộc về user hiện tại không
-        if ($order->user_id !== Auth::id()) {
-            return redirect()->back()->with('error', 'Đơn hàng không tồn tại');
-        }
-
-        // Kiểm tra xem đơn hàng đã hoàn thành chưa
-        if ($order->status !== 'completed') {
-            return redirect()->back()->with('error', 'Chỉ có thể đánh giá khi đơn hàng hoàn thành');
-        }
-
+        // Sử dụng Policy để kiểm tra quyền: user có phải chủ đơn hàng không và đơn hàng đã hoàn thành chưa.
+        $this->authorize('review', $order);
+ 
         // Lấy danh sách sản phẩm trong đơn hàng
         $products = $order->items()->with('product')->get();
 
@@ -43,23 +37,11 @@ class ReviewController extends Controller
     /**
      * Lưu đánh giá
      */
-    public function store(Request $request, Order $order)
+    public function store(StoreReviewRequest $request, Order $order)
     {
-        // Kiểm tra quyền
-        if ($order->user_id !== Auth::id()) {
-            return redirect()->back()->with('error', 'Bạn không có quyền truy cập');
-        }
-
-        // Kiểm tra trạng thái đơn hàng
-        if ($order->status !== 'completed') {
-            return redirect()->back()->with('error', 'Không thể đánh giá đơn hàng này');
-        }
-
-        $validated = $request->validate([
-            'product_id' => 'required|integer|exists:products,id',
-            'rating' => 'required|integer|between:1,5',
-            'comment' => 'nullable|string|max:1000'
-        ]);
+        // Authorization và Validation đã được xử lý tự động bởi StoreReviewRequest.
+        // Nếu thất bại, Laravel sẽ tự động redirect về trang trước kèm lỗi.
+        $validated = $request->validated();
 
         // Kiểm tra sản phẩm có trong đơn hàng không
         $orderItem = $order->items()->where('product_id', $validated['product_id'])->first();
