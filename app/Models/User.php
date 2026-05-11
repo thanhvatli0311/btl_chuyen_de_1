@@ -50,6 +50,30 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
+    // Relationship với CartItem
+    public function cartItems()
+    {
+        return $this->hasMany(CartItem::class);
+    }
+
+    // Relationship với ChatbotMessage
+    public function chatbotMessages()
+    {
+        return $this->hasMany(ChatbotMessage::class);
+    }
+
+    // Relationship với ChatbotResponse (created_by admin)
+    public function chatbotResponses()
+    {
+        return $this->hasMany(ChatbotResponse::class, 'created_by');
+    }
+
+    // Relationship com Review
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
     // Check if user is admin
     public function isAdmin()
     {

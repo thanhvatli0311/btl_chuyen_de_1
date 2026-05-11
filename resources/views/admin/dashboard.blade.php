@@ -52,7 +52,7 @@
             <h4 class="mb-3">⚙️ Quản Lý</h4>
         </div>
         <div class="col-md-3">
-            <a href="{{ route('admin.products') }}" class="btn btn-primary btn-lg w-100 mb-2">
+            <a href="{{ route('admin.products.index') }}" class="btn btn-primary btn-lg w-100 mb-2">
                 📦 Quản lý Sản phẩm
             </a>
         </div>
@@ -72,6 +72,11 @@
             </a>
         </div>
         <div class="col-md-3">
+            <a href="{{ route('admin.users.index') }}" class="btn btn-secondary btn-lg w-100 mb-2">
+                👥 Quản Lý Tài Khoản
+            </a>
+        </div>
+        <div class="col-md-3">
             <a href="{{ route('admin.chatbot') }}" class="btn btn-secondary btn-lg w-100 mb-2">
                 🤖 Chatbot
             </a>
@@ -83,114 +88,68 @@
         </div>
     </div>
 
-    <!-- Recent Orders -->
+    <!-- Revenue Chart -->
     <div class="row">
         <div class="col-md-12">
-            <h4 class="mb-3">📈 Đơn Hàng Gần Đây</h4>
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>#Mã</th>
-                            <th>👤 Khách Hàng</th>
-                            <th>💰 Tổng Tiền</th>
-                            <th>📍 Địa Chỉ</th>
-                            <th>📊 Trạng Thái</th>
-                            <th>📅 Ngày Đặt</th>
-                            <th>Hành Động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($recentOrders as $order)
-                            <tr>
-                                <td>#{{ $order->id }}</td>
-                                <td>{{ $order->user->name }}</td>
-                                <td class="price">{{ number_format($order->total_price, 0, ',', '.') }}₫</td>
-                                <td>{{ Str::limit($order->shipping_address, 30) }}</td>
-                                <td>
-                                    @if($order->status === 'pending')
-                                        <span class="badge bg-warning">⏳ Chờ</span>
-                                    @elseif($order->status === 'processing')
-                                        <span class="badge bg-info">🔄 Xử Lý</span>
-                                    @elseif($order->status === 'completed')
-                                        <span class="badge bg-success">✅ Hoàn Thành</span>
-                                    @else
-                                        <span class="badge bg-danger">❌ Hủy</span>
-                                    @endif
-                                </td>
-                                <td>{{ $order->created_at->format('d/m/Y H:i') }}</td>
-                                <td>
-                                    <a href="{{ route('admin.orders.detail', $order) }}" class="btn btn-sm btn-primary">
-                                        👁️
-                                    </a>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Customer Inquiries Section -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <h4 class="mb-3">💬 Tin Nhắn Khách Hàng</h4>
             <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Tổng quan Tin nhắn</h6>
-                    <a href="{{ route('admin.messages') }}" class="btn btn-sm btn-primary">Xem tất cả</a>
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">📈 Biểu Đồ Doanh Thu (30 Ngày Gần Nhất)</h6>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <div class="card bg-light text-dark shadow-sm">
-                                <div class="card-body">
-                                    <div class="text-xs font-weight-bold text-uppercase mb-1">
-                                        Tin nhắn chờ xử lý
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-dark">{{ $pendingMessagesCount }}</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="card bg-light text-dark shadow-sm">
-                                <div class="card-body">
-                                    <div class="text-xs font-weight-bold text-uppercase mb-1">
-                                        Tổng số tin nhắn
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-dark">{{ $totalMessagesCount }}</div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="chart-area" style="height: 350px;">
+                        {{-- Truyền dữ liệu từ PHP sang HTML bằng data attributes để JS sử dụng --}}
+                        <canvas id="revenueChart"
+                                data-labels='{!! json_encode($chartLabels) !!}'
+                                data-revenue='{!! json_encode($chartData) !!}'>
+                        </canvas>
                     </div>
-                    <h6 class="mt-3 mb-2 text-gray-800">Tin nhắn gần đây:</h6>
-                    @if($recentMessages->isEmpty())
-                        <p class="text-center text-muted">Không có tin nhắn gần đây.</p>
-                    @else
-                        <div class="list-group">
-                            @foreach($recentMessages as $message)
-                                <a href="{{ route('admin.messages.detail', $message->id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="font-weight-bold">
-                                            {{ $message->user->name ?? $message->visitor_name ?? 'Khách vãng lai' }}
-                                            @if($message->user)
-                                                <small class="text-muted">({{ $message->user->email }})</small>
-                                            @elseif($message->visitor_email)
-                                                <small class="text-muted">({{ $message->visitor_email }})</small>
-                                            @endif
-                                        </div>
-                                        <small class="text-muted">{{ Str::limit($message->message, 50) }}</small>
-                                    </div>
-                                    <span class="badge {{ $message->status == 'pending' ? 'bg-warning' : 'bg-success' }} text-white">{{ $message->status == 'pending' ? 'Chờ' : 'Đã trả lời' }}</span>
-                                </a>
-                            @endforeach
-                        </div>
-                    @endif
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+@endsection
+
+@section('scripts')
+{{-- Nhúng thư viện Chart.js --}}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const canvas = document.getElementById('revenueChart');
+        if (!canvas) return;
+
+        // Đọc dữ liệu từ data attributes và parse thành đối tượng JavaScript
+        const chartLabels = JSON.parse(canvas.dataset.labels || '[]');
+        const chartData = JSON.parse(canvas.dataset.revenue || '[]');
+
+        const ctx = canvas.getContext('2d');
+        const revenueChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: 'Doanh thu',
+                    data: chartData,
+                    backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                    borderColor: 'rgba(78, 115, 223, 1)',
+                    tension: 0.3,
+                    fill: true,
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: (value) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
 @endsection

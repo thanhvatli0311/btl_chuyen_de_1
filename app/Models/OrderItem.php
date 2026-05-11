@@ -16,6 +16,11 @@ class OrderItem extends Model
         'price'
     ];
 
+    protected $casts = [
+        'quantity' => 'integer',
+        'price' => 'integer',
+    ];
+
     // Relationship với Order
     public function order()
     {

@@ -30,27 +30,27 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($cart as $id => $item)
+                        @foreach($cart as $cartItem)
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="/images/{{ $item['image'] }}" width="60" class="me-3 rounded" alt="{{ $item['name'] }}">
+                                        <img src="/images/{{ $cartItem->product->image }}" width="60" class="me-3 rounded" alt="{{ $cartItem->product->name }}">
                                         <div>
-                                            <strong>{{ $item['name'] }}</strong>
+                                            <strong>{{ $cartItem->product->name }}</strong>
                                         </div>
                                     </div>
                                 </td>
-                                <td>{{ number_format($item['price'], 0, ',', '.') }}₫</td>
+                                <td>{{ number_format($cartItem->product->price, 0, ',', '.') }}₫</td>
                                 <td>
-                                    <form action="/cart/update/{{ $id }}" method="POST" class="d-flex">
+                                    <form action="/cart/update/{{ $cartItem->product->id }}" method="POST" class="d-flex">
                                         @csrf
-                                        <input type="number" name="quantity" value="{{ $item['quantity'] }}" min="1" max="100" class="form-control form-control-sm me-2" style="width: 80px;">
+                                        <input type="number" name="quantity" value="{{ $cartItem->quantity }}" min="1" max="{{ $cartItem->product->quantity }}" class="form-control form-control-sm me-2" style="width: 80px;">
                                         <button type="submit" class="btn btn-sm btn-primary">🔄</button>
                                     </form>
                                 </td>
-                                <td class="price">{{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}₫</td>
+                                <td class="price">{{ number_format($cartItem->product->price * $cartItem->quantity, 0, ',', '.') }}₫</td>
                                 <td>
-                                    <form action="/cart/remove/{{ $id }}" method="POST">
+                                    <form action="/cart/remove/{{ $cartItem->product->id }}" method="POST">
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Bạn có chắc chắn?')">🗑️ Xóa</button>
                                     </form>

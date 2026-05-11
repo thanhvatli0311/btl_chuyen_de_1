@@ -20,6 +20,11 @@ class Order extends Model
         'discount_amount'
     ];
 
+    protected $casts = [
+        'total_price' => 'integer',
+        'discount_amount' => 'integer',
+    ];
+
     // Relationship với User
     public function user()
     {

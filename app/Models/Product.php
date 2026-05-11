@@ -11,15 +11,29 @@ class Product extends Model
        'name',
        'price',
        'quantity',
-       'image',
        'description',
-       'category_id'
+       'category_id',
+       'brand_id', // Thêm brand_id
+       'image',
+       'is_featured'
+   ];
+
+   protected $casts = [
+       'price' => 'integer',
+       'quantity' => 'integer',
+       'is_featured' => 'boolean',
    ];
 
    // Relationship với Category
    public function category()
    {
        return $this->belongsTo(Category::class);
+   }
+
+   // Relationship với Brand
+   public function brand()
+   {
+       return $this->belongsTo(Brand::class);
    }
 
    // Relationship với OrderItem

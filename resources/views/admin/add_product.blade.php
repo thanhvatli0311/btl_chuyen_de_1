@@ -2,14 +2,12 @@
 
 @section('content')
 
-<a href="/admin/add"
-class="btn btn-primary">
-
-Thêm sản phẩm
-
-</a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Thêm sản phẩm mới</h2>
+    <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">← Quay lại</a>
+</div>
 <form method="POST"
-action="/admin/add"
+action="{{ route('admin.products.store') }}"
 enctype="multipart/form-data">
 
 @csrf
@@ -85,6 +83,21 @@ value="{{$c->id}}">
 
 @endforeach
 
+</select>
+
+</div>
+
+<div class="mb-3">
+
+<label>Thương hiệu</label>
+
+<select name="brand_id" class="form-control">
+    <option value="">-- Chọn thương hiệu --</option>
+    @foreach($brands as $brand)
+        <option value="{{ $brand->id }}">
+            {{ $brand->name }}
+        </option>
+    @endforeach
 </select>
 
 </div>

@@ -48,7 +48,7 @@
                             <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-sm btn-primary">
                                 ✏️ Sửa
                             </a>
-                            <form action="{{ route('admin.products.delete', $product) }}" method="POST" class="d-inline">
+                            <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="d-inline">
                                 @csrf
                                 @method('DELETE')
                                 <button class="btn btn-sm btn-danger" onclick="return confirm('Bạn có chắc chắn?')">

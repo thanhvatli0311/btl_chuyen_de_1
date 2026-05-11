@@ -46,83 +46,36 @@ class AdminController extends Controller
         ]);
     }
 
-    // ========== PRODUCTS ==========
-    public function products()
+    // ========== ORDERS ==========
+    public function orders(Request $request)
     {
-        $products = Product::with('category')->paginate(15);
-        return view('admin.products.index', compact('products'));
-    }
+        $query = Order::with('user');
 
-    public function createProduct()
-    {
-        $categories = Category::all();
-        return view('admin.products.create', compact('categories'));
-    }
-
-    public function storeProduct(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
-            'quantity' => 'required|integer|min:0',
-            'description' => 'required|string',
-            'category_id' => 'required|exists:categories,id',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
-        ]);
-
-        $imageName = time() . '.' . $request->image->extension();
-        $request->image->move(public_path('images'), $imageName);
-
-        Product::create([
-            'name' => $validated['name'],
-            'price' => $validated['price'],
-            'quantity' => $validated['quantity'],
-            'description' => $validated['description'],
-            'category_id' => $validated['category_id'],
-            'image' => $imageName
-        ]);
-
-        return redirect()->route('admin.products')->with('success', 'Sản phẩm được thêm thành công!');
-    }
-
-    public function editProduct(Product $product)
-    {
-        $categories = Category::all();
-        return view('admin.products.edit', compact('product', 'categories'));
-    }
-
-    public function updateProduct(Request $request, Product $product)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
-            'quantity' => 'required|integer|min:0',
-            'description' => 'required|string',
-            'category_id' => 'required|exists:categories,id',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
-        ]);
-
-        if ($request->hasFile('image')) {
-            $imageName = time() . '.' . $request->image->extension();
-            $request->image->move(public_path('images'), $imageName);
-            $validated['image'] = $imageName;
+        // Search by order ID
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where('id', 'like', '%' . $search . '%')
+                  ->orWhereHas('user', function ($q) use ($search) {
+                      $q->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('email', 'like', '%' . $search . '%');
+                  });
         }
 
-        $product->update($validated);
+        // Filter by status
+        if ($request->filled('status') && $request->input('status') !== '') {
+            $query->where('status', $request->input('status'));
+        }
 
-        return redirect()->route('admin.products')->with('success', 'Sản phẩm cập nhật thành công!');
-    }
+        // Filter by date range
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->input('date_from'));
+        }
 
-    public function deleteProduct(Product $product)
-    {
-        $product->delete();
-        return redirect()->route('admin.products')->with('success', 'Sản phẩm xóa thành công!');
-    }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->input('date_to'));
+        }
 
-    // ========== ORDERS ==========
-    public function orders()
-    {
-        $orders = Order::with('user')->paginate(15);
+        $orders = $query->orderBy('created_at', 'desc')->paginate(15);
         return view('admin.orders.index', compact('orders'));
     }
 
@@ -140,6 +93,17 @@ class AdminController extends Controller
 
         $order->update($validated);
         return redirect()->back()->with('success', 'Cập nhật trạng thái thành công!');
+    }
+
+    public function deleteOrder(Order $order)
+    {
+        // Delete all order items first (foreign key constraint)
+        $order->items()->delete();
+        
+        // Delete the order
+        $order->delete();
+        
+        return redirect()->route('admin.orders')->with('success', 'Xóa đơn hàng thành công!');
     }
 
     // ========== DISCOUNT CODES ==========
@@ -324,16 +288,5 @@ class AdminController extends Controller
     {
         $message->delete();
         return redirect()->route('admin.messages')->with('success', 'Tin nhắn đã được xóa!');
-    }
-
-    // Legacy method - for backward compatibility
-    public function addForm()
-    {
-        return $this->createProduct();
-    }
-
-    public function store(Request $request)
-    {
-        return $this->storeProduct($request);
     }
 }
