@@ -285,6 +285,55 @@
     }
 }
 
+.chatbot-products-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    padding: 4px 0 12px 0;
+}
+
+.chatbot-product-card {
+    border: 1px solid #e9edf6;
+    border-radius: 12px;
+    overflow: hidden;
+    text-decoration: none;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chatbot-product-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.chatbot-product-card img {
+    width: 100%;
+    height: 125px;
+    object-fit: cover;
+    display: block;
+}
+
+.chatbot-product-info {
+    padding: 8px;
+}
+
+.chatbot-product-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #24324a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.chatbot-product-price {
+    font-size: 13px;
+    font-weight: 700;
+    color: #667eea;
+}
+
 @media (max-width: 480px) {
     .chatbot-widget {
         right: 10px;
@@ -397,6 +446,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             }
 
+            // Hiển thị sản phẩm liên quan nếu có
+            if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+                displayProducts(data.products);
+            }
+
             setSendingState(false);
         } catch (error) {
             removeLoading(loadingId);
@@ -470,6 +524,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     time: row.updated_at || row.created_at,
                     sourceLabel: row.is_auto_reply ? 'Trả lời tự động' : 'Admin phản hồi'
                 });
+
+                // Hiển thị sản phẩm liên quan nếu có
+                if (row.related_products && Array.isArray(row.related_products) && row.related_products.length > 0) {
+                    displayProducts(row.related_products);
+                }
             } else if (row.status === 'pending') {
                 appendMessage({
                     sender: 'system',
@@ -546,6 +605,42 @@ document.addEventListener('DOMContentLoaded', function () {
         if (loading) {
             loading.remove();
         }
+    }
+
+    function displayProducts(products) {
+        const productsContainer = document.createElement('div');
+        productsContainer.className = 'chatbot-products-container';
+
+        products.forEach(product => {
+            const productCard = document.createElement('a');
+            productCard.href = '{{ url("product") }}/' + product.id;
+            productCard.className = 'chatbot-product-card';
+            productCard.target = '_blank';
+
+            const productImage = document.createElement('img');
+            productImage.src = '{{ asset("images") }}/' + product.image;
+            productImage.alt = product.name;
+
+            const productInfo = document.createElement('div');
+            productInfo.className = 'chatbot-product-info';
+
+            const productName = document.createElement('div');
+            productName.className = 'chatbot-product-name';
+            productName.textContent = product.name;
+
+            const productPrice = document.createElement('div');
+            productPrice.className = 'chatbot-product-price';
+            productPrice.textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price);
+
+            productInfo.appendChild(productName);
+            productInfo.appendChild(productPrice);
+            productCard.appendChild(productImage);
+            productCard.appendChild(productInfo);
+            productsContainer.appendChild(productCard);
+        });
+
+        chatbotMessages.appendChild(productsContainer);
+        scrollMessagesToBottom();
     }
 
     function setSendingState(isSending) {

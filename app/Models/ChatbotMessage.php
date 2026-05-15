@@ -19,12 +19,14 @@ class ChatbotMessage extends Model
         'response',
         'status',
         'is_auto_reply',
+        'related_products',
     ];
 
     protected $casts = [
         'is_auto_reply' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'related_products' => 'array',
     ];
 
     // Relationship với User

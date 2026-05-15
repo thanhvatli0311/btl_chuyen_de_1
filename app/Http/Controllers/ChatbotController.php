@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ChatbotMessage;
+use App\Models\Product;
 use App\Models\ChatbotResponse;
 use Illuminate\Http\Request;
 
@@ -29,24 +30,36 @@ class ChatbotController extends Controller
         // Tìm kiếm câu trả lời từ chatbot responses
         $response = ChatbotResponse::getAutoReply($validated['message']);
 
-        $isAutoReply = false;
-        $replyMessage = null;
-        $status = 'pending'; // Mặc định là chờ admin
+        $isAutoReply      = false;
+        $replyMessage     = null;
+        $status           = 'pending'; // Mặc định là chờ admin
+        $products         = [];
+        $productDataForDb = null;
 
         if ($response) {
             $replyMessage = $response->answer;
-            $isAutoReply = true;
-            $status = 'answered';
+            $isAutoReply  = true;
+            $status       = 'answered';
+
+            // Lấy sản phẩm đính kèm nếu có
+            if (!empty($response->product_ids)) {
+                $products = Product::whereIn('id', $response->product_ids)
+                    ->get(['id', 'name', 'price', 'image']);
+                if ($products->isNotEmpty()) {
+                    $productDataForDb = $products->toArray();
+                }
+            }
         }
 
         $message = ChatbotMessage::create([
-            'user_id' => $user->id,
-            'visitor_name' => $validated['visitor_name'] ?? $user->name,
+            'user_id'       => $user->id,
+            'visitor_name'  => $validated['visitor_name'] ?? $user->name,
             'visitor_email' => $validated['visitor_email'] ?? $user->email,
-            'message' => $validated['message'],
-            'response' => $replyMessage,
-            'status' => $status,
+            'message'       => $validated['message'],
+            'response'      => $replyMessage,
+            'status'        => $status,
             'is_auto_reply' => $isAutoReply,
+            'related_products' => $productDataForDb,
         ]);
 
         return response()->json([
@@ -54,6 +67,7 @@ class ChatbotController extends Controller
             'message' => $isAutoReply ? '✅ Chatbot trả lời tự động' : '⏳ Tin nhắn đã gửi cho admin, vui lòng chờ',
             'is_auto_reply' => $isAutoReply,
             'response' => $replyMessage,
+            'products' => $products,
             'chat' => [
                 'id' => $message->id,
                 'user_id' => $message->user_id,
@@ -93,6 +107,7 @@ class ChatbotController extends Controller
                     'response' => $message->response,
                     'status' => $message->status,
                     'is_auto_reply' => $message->is_auto_reply,
+                    'related_products' => $message->related_products,
                     'created_at' => optional($message->created_at)->toDateTimeString(),
                     'updated_at' => optional($message->updated_at)->toDateTimeString(),
                 ];

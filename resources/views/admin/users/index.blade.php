@@ -43,7 +43,7 @@
             <div class="card bg-primary text-white">
                 <div class="card-body">
                     <h5 class="card-title">👥 Tổng Tài Khoản</h5>
-                    <h2 class="card-text">{{ \App\Models\User::count() }}</h2>
+                    <h2 class="card-text">{{ $totalUsers }}</h2>
                 </div>
             </div>
         </div>
@@ -51,7 +51,7 @@
             <div class="card bg-danger text-white">
                 <div class="card-body">
                     <h5 class="card-title">🔑 Tài Khoản Admin</h5>
-                    <h2 class="card-text">{{ \App\Models\User::where('role', 'admin')->count() }}</h2>
+                    <h2 class="card-text">{{ $adminCount }}</h2>
                 </div>
             </div>
         </div>
@@ -59,7 +59,7 @@
             <div class="card bg-success text-white">
                 <div class="card-body">
                     <h5 class="card-title">🛍️ Tài Khoản Khách</h5>
-                    <h2 class="card-text">{{ \App\Models\User::where('role', 'customer')->count() }}</h2>
+                    <h2 class="card-text">{{ $customerCount }}</h2>
                 </div>
             </div>
         </div>

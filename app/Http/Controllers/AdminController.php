@@ -91,7 +91,38 @@ class AdminController extends Controller
             'status' => 'required|in:pending,processing,completed,cancelled'
         ]);
 
-        $order->update($validated);
+        $newStatus = $validated['status'];
+        $oldStatus = $order->status;
+
+        // Chỉ thực hiện khi trạng thái thực sự thay đổi
+        if ($newStatus !== $oldStatus) {
+            // Logic để khôi phục kho khi đơn hàng bị hủy
+            if ($newStatus === 'cancelled') {
+                foreach ($order->items as $item) {
+                    if ($item->product) {
+                        $item->product->increment('quantity', $item->quantity);
+                    }
+                }
+            } 
+            // Logic để trừ kho lại nếu đơn hàng được khôi phục từ trạng thái "đã hủy"
+            else if ($oldStatus === 'cancelled') {
+                // Kiểm tra kho trước khi khôi phục đơn hàng
+                foreach ($order->items as $item) {
+                    if (!$item->product || $item->product->quantity < $item->quantity) {
+                        return redirect()->back()->with('error', "Không đủ hàng cho sản phẩm '{$item->product->name}' để khôi phục đơn hàng. Kho còn: {$item->product->quantity}.");
+                    }
+                }
+                // Nếu kho đủ, trừ đi số lượng
+                foreach ($order->items as $item) {
+                    if ($item->product) {
+                        $item->product->decrement('quantity', $item->quantity);
+                    }
+                }
+            }
+
+            $order->update($validated);
+        }
+
         return redirect()->back()->with('success', 'Cập nhật trạng thái thành công!');
     }
 
@@ -193,7 +224,8 @@ class AdminController extends Controller
 
     public function createChatbot()
     {
-        return view('admin.chatbot.create');
+        $products = Product::orderBy('name')->get();
+        return view('admin.chatbot.create', compact('products'));
     }
 
     public function storeChatbot(Request $request)
@@ -202,10 +234,14 @@ class AdminController extends Controller
             'question' => 'required|string',
             'answer' => 'required|string',
             'category' => 'required|string',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'product_ids' => 'nullable|array',
+            'product_ids.*' => 'exists:products,id'
         ]);
 
         $validated['created_by'] = auth()->id();
+        $validated['product_ids'] = $request->input('product_ids', []);
+
         ChatbotResponse::create($validated);
 
         return redirect()->route('admin.chatbot')->with('success', 'Câu hỏi được thêm thành công!');
@@ -213,7 +249,8 @@ class AdminController extends Controller
 
     public function editChatbot(ChatbotResponse $response)
     {
-        return view('admin.chatbot.edit', compact('response'));
+        $products = Product::orderBy('name')->get();
+        return view('admin.chatbot.edit', compact('response', 'products'));
     }
 
     public function updateChatbot(Request $request, ChatbotResponse $response)
@@ -222,9 +259,15 @@ class AdminController extends Controller
             'question' => 'required|string',
             'answer' => 'required|string',
             'category' => 'required|string',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'product_ids' => 'nullable|array',
+            'product_ids.*' => 'exists:products,id'
         ]);
 
+        // Đảm bảo is_active có giá trị
+        $validated['is_active'] = $request->has('is_active');
+        $validated['product_ids'] = $request->input('product_ids', []);
+        
         $response->update($validated);
 
         return redirect()->route('admin.chatbot')->with('success', 'Câu hỏi cập nhật thành công!');
@@ -255,12 +298,15 @@ class AdminController extends Controller
     {
         $conversation = ChatbotMessage::with('user')
             ->conversationForMessage($message)
-            ->get();
+            ->latest() // Sắp xếp mới nhất lên đầu
+            ->limit(100) // Giới hạn 100 tin nhắn gần nhất để tránh quá tải
+            ->get()
+            ->reverse(); // Đảo ngược lại để hiển thị theo thứ tự thời gian
 
         return view('admin.messages.detail', [
             'message' => $message,
             'conversation' => $conversation,
-            'conversationOwner' => $conversation->first(),
+            'conversationOwner' => $message->user ?? (object)['name' => $message->visitor_name, 'email' => $message->visitor_email],
         ]);
     }
 

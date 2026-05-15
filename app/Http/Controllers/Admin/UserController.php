@@ -14,7 +14,13 @@ class UserController extends Controller
     public function index()
     {
         $users = User::paginate(15);
-        return view('admin.users.index', compact('users'));
+        
+        // Chuẩn bị dữ liệu thống kê cho view
+        $totalUsers = User::count();
+        $adminCount = User::where('role', 'admin')->count();
+        $customerCount = $totalUsers - $adminCount;
+
+        return view('admin.users.index', compact('users', 'totalUsers', 'adminCount', 'customerCount'));
     }
 
     /**

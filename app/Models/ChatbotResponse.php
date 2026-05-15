@@ -14,11 +14,13 @@ class ChatbotResponse extends Model
         'answer',
         'category',
         'is_active',
-        'created_by'
+        'created_by',
+        'product_ids',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
+        'product_ids' => 'array',
     ];
 
     // Relationship với User (người tạo)
