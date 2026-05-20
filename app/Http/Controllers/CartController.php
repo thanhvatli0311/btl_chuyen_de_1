@@ -40,7 +40,7 @@ class CartController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => '❌ Sản phẩm này đã hết hàng!'], 400);
             }
-            return back()->with('error', '❌ Sản phẩm này đã hết hàng!');
+            return redirect('/cart')->with('error', '❌ Sản phẩm này đã hết hàng!');
         }
 
         // Tìm sản phẩm trong giỏ hàng của user
@@ -56,7 +56,7 @@ class CartController extends Controller
                 if ($request->wantsJson()) {
                     return response()->json(['success' => false, 'message' => $message], 400);
                 }
-                return back()->with('error', $message);
+                return redirect('/cart')->with('error', $message);
             }
             // Tăng số lượng
             $cartItem->increment('quantity');

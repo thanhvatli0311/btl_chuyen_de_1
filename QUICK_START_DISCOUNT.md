@@ -1,105 +1,153 @@
-# Hướng Dẫn Nhanh - Hệ Thống Mã Giảm Giá
+# 🏷️ Hệ Thống Mã Giảm Giá (Discount Code System)
 
-## 📋 Tóm Tắt
+## 📋 Tổng Quan
 
-Đã thêm hệ thống mã giảm giá (Discount Code System) hoàn chỉnh cho Watch Store bao gồm:
-- ✅ API kiểm tra mã giảm giá
-- ✅ Giao diện nhập mã giảm giá trong giỏ hàng
-- ✅ Admin panel quản lý mã
-- ✅ Database migrations
-- ✅ Seeders (mã mặc định)
-- ✅ Bảo mật xác thực server-side
+Watch Store có hệ thống mã giảm giá hoàn chỉnh cho phép admin tạo, quản lý các mã giảm giá và khách hàng áp dụng trong giỏ hàng trước khi thanh toán.
+
+### ✨ Tính Năng Chính
+
+#### 👥 Cho Khách Hàng
+- ✅ Nhập mã giảm giá trong giỏ hàng
+- ✅ Xem ngay số tiền được giảm
+- ✅ Áp dụng mã và thanh toán với giá khuyến mãi
+- ✅ Kiểm tra lỗi mã (hết hạn, hết lượt, tối thiểu không đạt...)
+
+#### 👨‍💼 Cho Admin
+- ✅ Xem danh sách tất cả mã giảm giá
+- ✅ Tạo mã mới (% hoặc số tiền cố định)
+- ✅ Chỉnh sửa thông tin mã
+- ✅ Kích hoạt/vô hiệu hóa mã
+- ✅ Xóa mã giảm giá
+- ✅ Xem số lần đã sử dụng
+
+#### 🔧 Tính Năng Kỹ Thuật
+- Xác thực bên server an toàn (không thể bypass từ client)
+- Giới hạn số lần sử dụng (usage_limit)
+- Ngày hiệu lực (valid_from - valid_until)
+- Tối thiểu đơn hàng (minimum_order_amount)
+- Hai loại giảm giá: Phần trăm (%) hoặc số tiền cố định (₫)
 
 ---
 
-## 🚀 Cài Đặt & Khởi Động
+## 🚀 Khởi Động Nhanh
 
-### Step 1: Chạy Migration
+### 1️⃣ Database Setup
+Chạy migration để tạo bảng discount_codes:
 ```bash
 php artisan migrate
 ```
 
-### Step 2: Seed Database (Tạo mã mặc định)
+### 2️⃣ Tạo Dữ Liệu Mẫu (Tùy Chọn)
 ```bash
 php artisan db:seed --class=DiscountCodeSeeder
 ```
 
-Hoặc seed toàn bộ:
-```bash
-php artisan db:seed
-```
-
-### Step 3: Khởi Động Server
+### 3️⃣ Chạy Server
 ```bash
 php artisan serve
 ```
 
 ---
 
-## 🧪 Test Hệ Thống
+## 🧪 Hướng Dẫn Sử Dụng
 
-### Mã Giảm Giá Có Sẵn
-| Mã | Loại | Giá Trị | Tối Thiểu |
-|---|---|---|---|
-| SAVE10 | Giảm % | 10% | 0₫ |
-| SAVE20 | Giảm % | 20% | 1,000,000₫ |
-| NEWYEAR500K | Giảm ₫ | 500,000₫ | 2,000,000₫ |
-| SUMMER15 | Giảm % | 15% | 500,000₫ |
+### Cho Khách Hàng: Áp Dụng Mã
 
-### Hướng Dẫn Test:
-1. **Truy cập giỏ hàng**: https://localhost:8000/cart
-2. **Thêm sản phẩm** nếu chưa có
-3. **Nhập mã giảm giá** (vd: SAVE10)
+1. **Thêm sản phẩm vào giỏ hàng**
+   - Xem sản phẩm → Nhấp "Thêm vào giỏ" (cần đăng nhập)
+   
+2. **Vào giỏ hàng**
+   - Truy cập: http://127.0.0.1:8000/cart
+   
+3. **Nhập mã giảm giá**
+   - Tìm ô nhập "Mã giảm giá" trong giỏ hàng
+   - Nhập mã (ví dụ: SAVE10)
+   
 4. **Nhấp "Áp Dụng"**
-5. **Kiểm tra** số tiền được giảm
-6. **Checkout** với giá đã giảm
+   - Hệ thống sẽ kiểm tra mã (bên server)
+   - Hiển thị số tiền được giảm
+   - Cập nhật tổng tiền
+   
+5. **Checkout**
+   - Tiếp tục thanh toán với giá đã giảm
+
+### Mã Giảm Giá Ví Dụ
+
+| Mã | Loại | Giá Trị | Tối Thiểu | Hạn |
+|---|---|---|---|---|
+| SAVE10 | Giảm % | 10% | 0₫ | Không hạn |
+| SAVE20 | Giảm % | 20% | 1,000,000₫ | Không hạn |
+| NEWYEAR500K | Giảm ₫ | 500,000₫ | 2,000,000₫ | Không hạn |
+| SUMMER15 | Giảm % | 15% | 500,000₫ | Không hạn |
 
 ---
 
-## 🔐 Bảo Mật
+### Cho Admin: Quản Lý Mã
 
-| Tính Năng | Mô Tả |
-|--|--|
-| Server-side validation | Xác thực lại trên server khi checkout |
-| Usage limit | Kiểm tra số lần sử dụng từ database |
-| Time-based | Kiểm tra ngày hết hạn |
-| Minimum amount | Kiểm tra tổng đơn tối thiểu |
-| Activation status | Kiểm tra mã có bị vô hiệu hóa |
-
----
-
-## 👨‍💼 Admin Panel
-
-### Truy Cập
-- URL: `/admin/discount-codes`
+#### Truy Cập
+- URL: http://127.0.0.1:8000/admin/discount-codes
 - Yêu cầu: Đăng nhập với tài khoản admin
 
-### Chức Năng
-- ✅ Xem danh sách mã
-- ✅ Tạo mã mới
-- ✅ Chỉnh sửa mã
-- ✅ Vô hiệu hóa/kích hoạt mã
-- ✅ Xóa mã
-- ✅ Xem số lần đã dùng
+#### Các Chức Năng
 
-### Ví Dụ Tạo Mã
-1. Vào `/admin/discount-codes`
-2. Nhấp "➕ Tạo Mã Mới"
-3. Nhập thông tin:
-   - Mã: BLACKFRIDAY50
-   - Loại: Giảm Phần Trăm
-   - Giá Trị: 50
-   - Tối Thiểu: 1,000,000
-   - Giới Hạn: 100
-   - Từ: Ngày hôm nay
-   - Đến: 30 ngày sau
-4. Nhấp "Tạo Mã"
+**1. Xem Danh Sách Mã**
+- Truy cập `/admin/discount-codes`
+- Xem tất cả mã, trạng thái, số lần sử dụng
+
+**2. Tạo Mã Mới**
+- Nhấp nút "➕ Tạo Mã Mới"
+- Nhập thông tin:
+  - **Mã**: BLACKFRIDAY50 (không có ký tự đặc biệt)
+  - **Mô Tả**: (tuỳ chọn) Ví dụ: "Black Friday - Giảm 50%"
+  - **Loại**: Chọn "percentage" (%) hoặc "fixed_amount" (₫)
+  - **Giá Trị**: 50 (nếu %, là 50%; nếu ₫, là 50,000₫)
+  - **Tối Thiểu**: 1,000,000 (đơn hàng phải từ số tiền này)
+  - **Giới Hạn Sử Dụng**: 100 (null = vô hạn)
+  - **Từ**: Ngày bắt đầu
+  - **Đến**: Ngày hết hạn
+  - **Kích Hoạt**: Tích chọn để bật
+
+**3. Chỉnh Sửa Mã**
+- Nhấp vào mã cần sửa
+- Cập nhật thông tin
+- Lưu thay đổi
+
+**4. Kích Hoạt/Vô Hiệu Hóa**
+- Click nút toggle bên cạnh mã
+- Trạng thái sẽ thay đổi ngay
+
+**5. Xóa Mã**
+- Nhấp nút "🗑️ Xóa" trên danh sách
+- Xác nhận xóa
+
+---
+
+## 📊 Cấu Trúc Database
+
+### Bảng: discount_codes
+
+| Cột | Kiểu | Mô Tả |
+|-----|------|-------|
+| id | INT | ID duy nhất |
+| code | VARCHAR | Mã giảm giá (VD: SAVE10) |
+| description | TEXT | Mô tả mã |
+| type | ENUM | percentage hoặc fixed_amount |
+| value | DECIMAL | Giá trị (%) hoặc số tiền (₫) |
+| minimum_order_amount | DECIMAL | Tối thiểu đơn hàng |
+| usage_limit | INT | Giới hạn sử dụng (null = vô hạn) |
+| usage_count | INT | Số lần đã sử dụng |
+| valid_from | TIMESTAMP | Ngày bắt đầu |
+| valid_until | TIMESTAMP | Ngày hết hạn |
+| is_active | BOOLEAN | Trạng thái kích hoạt |
+| created_at | TIMESTAMP | Lúc tạo |
+| updated_at | TIMESTAMP | Lúc cập nhật |
 
 ---
 
 ## 📡 API Endpoint
 
 ### POST /api/discount/verify
+Kiểm tra mã giảm giá từ frontend
 
 **Request:**
 ```json
@@ -109,7 +157,7 @@ php artisan serve
 }
 ```
 
-**Response Success:**
+**Response Thành Công:**
 ```json
 {
   "success": true,
@@ -121,7 +169,7 @@ php artisan serve
 }
 ```
 
-**Response Error:**
+**Response Lỗi - Mã Không Tồn Tại:**
 ```json
 {
   "success": false,
@@ -129,25 +177,91 @@ php artisan serve
 }
 ```
 
+**Response Lỗi - Mã Hết Hạn/Vô Hiệu:**
+```json
+{
+  "success": false,
+  "message": "❌ Mã giảm giá đã bị vô hiệu hóa"
+}
+```
+
+**Response Lỗi - Tối Thiểu Không Đạt:**
+```json
+{
+  "success": false,
+  "message": "❌ Mã giảm giá cần tối thiểu 1,000,000₫"
+}
+```
+
 ---
 
-## 📁 File Cấu Trúc
+## 🔍 Quy Trình Kiểm Tra Mã
+
+Khi khách hàng áp dụng mã, hệ thống sẽ kiểm tra theo thứ tự:
+
+1. ✅ **Mã có tồn tại không?** → Nếu không → Lỗi
+2. ✅ **Mã có được kích hoạt không?** → Nếu không → Lỗi
+3. ✅ **Mã còn hợp lệ không?** (Kiểm tra ngày, lượt sử dụng) → Nếu không → Lỗi
+4. ✅ **Tổng đơn có đạt tối thiểu không?** → Nếu không → Lỗi
+5. ✅ **Tính toán giảm giá** → Trả về kết quả
+
+---
+
+## 📁 Cấu Trúc File Code
 
 ### Controllers
 ```
 app/Http/Controllers/
-├── DiscountController.php          # API verify discount
+├── DiscountController.php
+│   └── verify()         # API kiểm tra mã
+│
 └── Admin/
-    └── DiscountCodeController.php  # Admin CRUD
+    └── DiscountCodeController.php
+        ├── index()      # Danh sách mã
+        ├── create()     # Form tạo mã
+        ├── store()      # Lưu mã mới
+        ├── edit()       # Form sửa mã
+        ├── update()     # Cập nhật mã
+        ├── destroy()    # Xóa mã
+        └── toggle()     # Kích hoạt/vô hiệu
 ```
 
 ### Models
 ```
 app/Models/
-└── DiscountCode.php  # Model + methods
+└── DiscountCode.php
+    ├── isValid()              # Kiểm tra hợp lệ
+    ├── meetsMinimumAmount()   # Kiểm tra tối thiểu
+    └── calculateDiscount()    # Tính tiền giảm
 ```
 
-### Views
+### Routes
+```
+POST   /api/discount/verify           # Verify mã (API)
+GET    /admin/discount-codes          # Danh sách
+GET    /admin/discount-codes/create   # Form tạo
+POST   /admin/discount-codes          # Lưu mã mới
+GET    /admin/discount-codes/{id}/edit # Form sửa
+PUT    /admin/discount-codes/{id}     # Cập nhật mã
+DELETE /admin/discount-codes/{id}     # Xóa mã
+PATCH  /admin/discount-codes/{id}/toggle # Kích hoạt
+```
+
+---
+
+## ✅ Kiểm Tra Chức Năng
+
+| Tính Năng | Cách Test |
+|-----------|-----------|
+| 📝 Tạo mã mới | Admin → `/admin/discount-codes` → Tạo mã |
+| 📋 Xem danh sách | Admin → `/admin/discount-codes` |
+| ✏️ Sửa mã | Admin → Chọn mã → Edit |
+| 🔄 Kích hoạt | Admin → Click toggle |
+| 🗑️ Xóa mã | Admin → Click xóa → Xác nhận |
+| 💳 Áp dụng mã | Customer → Giỏ hàng → Nhập mã → Áp dụng |
+| ✅ Giảm giá đúng | Kiểm tra số tiền trong response API |
+| ❌ Lỗi khi hết hạn | Áp dụng mã đã hết hiệu lực |
+| ❌ Lỗi tối thiểu | Áp dụng mã với tổng < tối thiểu |
 ```
 resources/views/
 ├── cart.blade.php     # Discount input

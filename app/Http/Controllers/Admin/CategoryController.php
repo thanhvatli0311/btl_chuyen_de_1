@@ -74,7 +74,7 @@ class CategoryController extends Controller
     public function destroy(Request $request, Category $category)
     {
         try {
-            // An toàn hơn: chỉ xóa nếu không có sản phẩm nào thuộc danh mục
+            //  chỉ xóa nếu không có sản phẩm nào thuộc danh mục
             if ($category->products()->count() > 0) {
                 $message = 'Không thể xóa danh mục này vì vẫn còn sản phẩm thuộc về nó.';
                 if ($request->wantsJson()) {
